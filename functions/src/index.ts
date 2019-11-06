@@ -13,17 +13,17 @@ admin.initializeApp();
 
 
 const getMyResultAsync = (email: string)=>{
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve:any, reject:any) => {
       const reConverEmail = email.toString().replace('.', '<dot>').replace('[', '<open>').replace(']', '<close>').replace('#', '<sharp>').replace('$', '<dollar>').replace('.', '<dot>').replace('.', '<dot>').replace('.', '<dot>')
     
 
       const resultRef = admin.database().ref(`/results/${reConverEmail}`)
   
-      
-      resultRef.once('value', async (snapshots: any) => {
-          resolve(snapshots._snapshot.value)    
-      })
+      resultRef.once('value', (snapshot: any) => {
+          resolve(snapshot.val())    
+      }).catch(err=> console.log('err', err))
     })
+    return email
 }
 
 
@@ -33,16 +33,22 @@ exports.impersonateMakeUpperCase = functions.database.ref('/users/{userid}').onC
       const spreadsheetId = '1LXtYyQh0yp2Bw1CHPo5FJNwAiJTdhPYeeYpQwiPZHOg';
       const range = 'A1';
 
-      const data = await getMyResultAsync(snap.val().weleEmail)
-
-      if(!data){
-        const date = new Date()
-        const row = [`${date.getMonth()}/${date.getDate()}/${date.getFullYear()}  ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
-        , snap.val().displayName, snap.val().weleEmail , snap.val().condition , 
-        snap.val().place, snap.val().purpose , snap.val().weleChannel, 
-        snap.val().city, snap.val().ad]
-        appendSheetRow(jwt, apiKey, spreadsheetId, range, row);
+      try{
+        const data = await getMyResultAsync(snap.val().weleEmail ? snap.val().weleEmail : '')
+        if(!data){
+          const date = new Date()
+          const row = [`${date.getMonth()}/${date.getDate()}/${date.getFullYear()}  ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+          , snap.val().displayName, snap.val().weleEmail , snap.val().condition , 
+          snap.val().place, snap.val().purpose , snap.val().weleChannel, 
+          snap.val().city, snap.val().ad]
+          appendSheetRow(jwt, apiKey, spreadsheetId, range, row);
+        }
+      }catch(err){
+        console.log('ERR', err)
       }
+     
+
+     
       return true 
 })
   
@@ -71,7 +77,7 @@ function getJwt() {
 
 function getApiKey() {
   var apiKeyFile = {
-    key:"<YOUR API KEY>"
+    key:"<API KEY>"
   }
   return apiKeyFile.key;
 }
